@@ -1,0 +1,55 @@
+﻿unitId,unitName,slot,family,grade,skillClass,assetName,displayName,description,chance,multiplier,ratio,amount,radius,duration
+101,산적,1,약탈,일반,Plunder,Skill_Plunder_Common,약탈,,,,0.3,3,,
+102,농부,1,수확,일반,Harvest,Skill_Harvest_Common,수확,,,,,4,,
+103,수도사,1,일시적 공격력 증가,일반,TempAttackUp,Skill_TempAttackUp_Common,일시적 공격력 증가,,0.2,,0.3,,,2
+104,방랑자,1,노획,일반,ChanceCoin,Skill_Loot_Common,노획,,0.15,,,1,,
+105,경비병,1,슬로우,일반,Slow,Skill_Slow_Common,슬로우,,1,,,1,0,2
+106,궁수,1,멀티샷,일반,MultiShot,Skill_MultiShot_Common,멀티샷,,0.15,,1,1,,
+201,석궁병,1,멀티샷,희귀,MultiShot,Skill_MultiShot_Rare,멀티샷,,0.2,,1,1,,
+202,창병,1,치명타,희귀,ChanceDamage,Skill_Critical_Rare,치명타,,0.3,1.5,,,,
+203,야만전사,1,약탈,희귀,Plunder,Skill_Plunder_Rare,약탈,,,,0.6,6,,
+204,용병,1,노획,희귀,ChanceCoin,Skill_Loot_Rare,노획,,0.15,,,3,,
+205,정찰병,1,슬로우,희귀,Slow,Skill_Slow_Rare,슬로우,,1,,,1.2,0,2
+206,방패병,1,일시적 공격력 증가,희귀,TempAttackUp,Skill_TempAttackUp_Rare,일시적 공격력 증가,,0.25,,0.35,,,2
+301,성기사,1,일시적 공격력 증가,영웅,TempAttackUp,Skill_TempAttackUp_Hero,일시적 공격력 증가,,0.3,,0.4,,,2
+301,성기사,2,사기 증가,영웅,AuraSpeedAdjacent,Skill_Morale_Hero,고무,,,,0.15,,,
+302,마법사,1,연쇄 번개,영웅,ChainLightning,Skill_ChainLightning_Hero,연쇄 번개,,0.25,,0.6,3,3,
+302,마법사,2,폭발,영웅,Bomb,Skill_Bomb_Hero,폭발,,,,0.5,,2,
+303,마녀,1,시체 폭발,영웅,CorpseExplosion,Skill_CorpseExplosion_Hero,시체 폭발,,,,0.6,,2,
+303,마녀,2,슬로우,영웅,Slow,Skill_Slow_Hero,냉기 파동,,1,,,0.8,2.5,1.5
+304,늑대전사,1,광분,영웅,Frenzy,Skill_Frenzy_Hero,광분,,,,0.3,,,5
+304,늑대전사,2,출혈,영웅,Bleed,Skill_Bleed_Hero,출혈,,1,,0.9,,,3
+305,암살자,1,처형,영웅,Execute,Skill_Execute_Hero,처형,,,1.4,0.25,,,
+305,암살자,2,일시적 갑옷 파괴,영웅,ArmorBreak,Skill_TempArmorBreak_Hero,일시적 갑옷 파괴,,0.3,,,15,2,2
+306,엘프 궁수,1,멀티샷,영웅,MultiShot,Skill_MultiShot_Hero,멀티샷,,0.25,,1,1,,
+306,엘프 궁수,2,일시적 공격속도 증가,영웅,TempSpeedUp,Skill_TempSpeedUp_Hero,일시적 공격속도 증가,,0.25,,0.3,,,2
+307,수호기사,1,전의 고취,영웅,AuraAttackAdjacent,Skill_Fervor_Hero,투지,,,,0.2,,,
+307,수호기사,2,충격파,영웅,Shockwave,Skill_Shockwave_Hero,충격파,,0.2,,0.5,,1.5,0.75
+308,검투사,1,발도,영웅,Slash,Skill_Slash_Hero,발도,,0.2,,0.8,,,
+308,검투사,2,치명타,영웅,ChanceDamage,Skill_Critical_Hero,치명타,,0.35,2,,,,
+309,철위병,1,강타,영웅,ChanceDamage,Skill_Smash_Hero,강타,,0.1,6,,,,
+309,철위병,2,갑옷 파괴,영웅,ArmorBreak,Skill_ArmorBreak_Hero,균열 확산,,1,,,10,1.5,2
+310,현상금 사냥꾼,1,보스 사냥꾼,영웅,BossHunter,Skill_BossHunter_Hero,보스 사냥꾼,,,1.3,,,,
+310,현상금 사냥꾼,2,노획,영웅,ChanceCoin,Skill_Loot_Hero,전리품,,0.15,,,3,,
+310,현상금 사냥꾼,3,처치 보상,영웅,KillReward,Skill_KillReward_Hero,현상금,,,,,1,,
+401,왕,1,전의 고취,전설,AuraAttackAll,Skill_Fervor_Legendary,전의 고취,,,,0.15,,,
+401,왕,2,사기 증가,전설,AuraSpeedAll,Skill_Morale_Legendary,사기 증가,,,,0.1,,,
+401,왕,3,축복,전설,Blessing,Skill_Blessing_Legendary,축복,,,,0.02,,,
+402,사자기사,1,광분,전설,Frenzy,Skill_Frenzy_Legendary,광분,,,,0.5,,,5
+402,사자기사,2,치명타,전설,ChanceDamage,Skill_Critical_Legendary,치명타,,0.4,2.5,,,,
+403,근위대장,1,일시적 공격속도 증가,전설,TempSpeedUp,Skill_TempSpeedUp_Legendary,일시적 공격속도 증가,,0.3,,0.4,,,2
+403,근위대장,2,처형,전설,Execute,Skill_Execute_Legendary,처형,,,1.5,0.3,,,
+404,숲의 기사,1,거인 학살,전설,GiantSlayer,Skill_GiantSlayer_Legendary,거인 학살,,,1,0.03,,,
+404,숲의 기사,2,일시적 슬로우,전설,Slow,Skill_TempSlow_Legendary,일시적 슬로우,,0.3,,,2,3,2
+405,주술사,1,연쇄 번개,전설,ChainLightning,Skill_ChainLightning_Legendary,연쇄 번개,,0.3,,0.8,3,3.5,
+405,주술사,2,출혈,전설,Bleed,Skill_Bleed_Legendary,출혈,,1,,1.5,,,3
+406,흑철기사,1,강타,전설,ChanceDamage,Skill_Smash_Legendary,강타,,0.12,8,,,,
+406,흑철기사,2,갑옷 파괴,전설,ArmorBreakAll,Skill_ArmorBreak_Legendary,철갑 붕괴,,1,,,15,,2
+407,대마법사,1,슬로우,전설,SlowAll,Skill_Slow_Legendary,혹한,,1,,,1,,2
+407,대마법사,2,폭발,전설,Bomb,Skill_Bomb_Legendary,폭발,,,,0.8,,2.5,
+408,성전사,1,일시적 공격력 증가,전설,TempAttackUp,Skill_TempAttackUp_Legendary,일시적 공격력 증가,,0.35,,0.5,,,2
+408,성전사,2,발도,전설,Slash,Skill_Slash_Legendary,발도,,0.25,,1,,,
+409,용기사,1,보스 사냥꾼,전설,BossHunter,Skill_BossHunter_Legendary,보스 사냥꾼,,,1.5,,,,
+409,용기사,2,충격파,전설,Shockwave,Skill_Shockwave_Legendary,충격파,,0.25,,0.8,,2,0.75
+410,역병의사,1,일시적 갑옷 파괴,전설,ArmorBreak,Skill_TempArmorBreak_Legendary,일시적 갑옷 파괴,,0.35,,,20,2.5,2
+410,역병의사,2,노획,전설,ChanceCoin,Skill_Loot_Legendary,채취,,0.15,,,5,,
