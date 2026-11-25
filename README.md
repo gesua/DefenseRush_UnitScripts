@@ -9,23 +9,21 @@
 [GitHub 코드 저장소](https://github.com/gesua/DefenseRush_UnitScripts)
 
 <!-- 시연 영상이나 빌드 링크가 생기면 위 링크 줄을 아래 형태로 바꾸세요.
-[🎮 시연 영상](영상 링크) | [📦 빌드 다운로드](빌드 링크) | [GitHub 코드 저장소](https://github.com/gesua/DefenseRush_UnitScripts)
+[🎮 시연 영상](영상 링크) | [📦 빌드 다운로드](https://drive.google.com/file/d/1FcifTRjN9o3C1SgS-OdaaTdD3rvKAray/view?usp=drive_link) | [GitHub 코드 저장소](https://github.com/gesua/DefenseRush_UnitScripts)
 -->
-
-<!-- 플레이 영상 및 화면: 캡처 파일이 준비되면 이 주석을 해제하고 파일 경로를 바꾸세요.
 
 ## 플레이 영상 및 화면
 
 <table>
 <tr>
-<td><strong>유닛 소환과 배치</strong><br><img src="docs/images/unit-summon.gif" width="420" alt="유닛 소환과 배치"></td>
-<td><strong>유닛 전투와 스킬</strong><br><img src="docs/images/unit-combat.gif" width="420" alt="유닛 전투와 스킬"></td>
+<td><strong>유닛 소환과 배치</strong><br><img src="docs~/images/unit-summon.gif" width="420" alt="유닛 소환과 배치"></td>
+<td><strong>유닛 스킬과 강화</strong><br><img src="docs~/images/unit-combat.gif" width="420" alt="유닛 전투와 스킬"></td>
 </tr>
 <tr>
-<td colspan="2"><strong>유닛 정보와 프리뷰</strong><br><img src="docs/images/unit-info.png" width="420" alt="유닛 정보와 프리뷰"></td>
+<td><strong>유닛 승급과 프리뷰</strong><br><img src="docs~/images/unit-preview.gif" width="420" alt="유닛 정보와 프리뷰"></td>
+<td><strong>보스 전투</strong><br><img src="docs~/images/boss.gif" width="420" alt="유닛 정보와 프리뷰"></td>
 </tr>
 </table>
--->
 
 ## 프로젝트 개요
 
@@ -169,9 +167,9 @@ else MonsterSkillDamage.Apply(_target, _damage, _damageKind);
 
 밸런스 표의 기본 DPS는 `공격력 × 초당 공격 횟수`로 계산한 단일 대상 기준입니다.<br> 범위 피해, 치명타, 적 체력은 이 비교식에 포함하지 않아 초기 능력치 기준을 맞추는 용도로 사용했습니다.
 
-<!-- TODO: 유닛 선택 화면이나 등급별 프리팹을 보여주는 이미지 추가
-![등급별 유닛 구성](docs/images/unit-roster.png)
--->
+
+![등급별 유닛 구성](docs~/images/unit-roster.png)
+
 
 ## 소환과 등급 확률
 
