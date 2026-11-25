@@ -1,19 +1,30 @@
 # Defense Rush — Unit Scripts
 
+> `ScriptableObject` 데이터와 전투 로직을 분리하고, 이벤트로 UI·연출을 연결한 3D 디펜스 게임의 유닛 시스템
+
 `운빨존많겜`에서 영감을 받은 3D 디펜스 게임의 유닛 시스템입니다. 원작의 2D 플레이를 3D 전장과 유닛 모델에 맞춰 재구성했습니다.
 
-이 저장소에는 팀 프로젝트 전체가 아니라 제가 맡아 개발한 Units 코드만 따로 정리했습니다. 유료 에셋과 팀원의 MainScene·Enemies 코드는 포함하지 않았습니다.
+이 저장소에는 팀 프로젝트 전체가 아니라 제가 맡아 개발한 Units 코드만 따로 정리했습니다. 유료 에셋과 팀원의 MainScene·Enemies 코드는 포함하지 않았습니다. 자세한 범위는 [공개 범위](#공개-범위)에 적었습니다.
 
 [GitHub 코드 저장소](https://github.com/gesua/DefenseRush_UnitScripts)
 
+<!-- 시연 영상이나 빌드 링크가 생기면 위 링크 줄을 아래 형태로 바꾸세요.
+[🎮 시연 영상](영상 링크) | [📦 빌드 다운로드](빌드 링크) | [GitHub 코드 저장소](https://github.com/gesua/DefenseRush_UnitScripts)
+-->
+
+<!-- 플레이 영상 및 화면: 캡처 파일이 준비되면 이 주석을 해제하고 파일 경로를 바꾸세요.
+
 ## 플레이 영상 및 화면
 
-아래 주석을 해제하고 캡처 파일 경로를 바꾸면 GIF와 이미지를 추가할 수 있습니다.
-
-<!--
-![유닛 소환과 배치](docs/images/unit-summon.gif)
-![유닛 전투와 스킬](docs/images/unit-combat.gif)
-![유닛 정보와 프리뷰](docs/images/unit-info.png)
+<table>
+<tr>
+<td><strong>유닛 소환과 배치</strong><br><img src="docs/images/unit-summon.gif" width="420" alt="유닛 소환과 배치"></td>
+<td><strong>유닛 전투와 스킬</strong><br><img src="docs/images/unit-combat.gif" width="420" alt="유닛 전투와 스킬"></td>
+</tr>
+<tr>
+<td colspan="2"><strong>유닛 정보와 프리뷰</strong><br><img src="docs/images/unit-info.png" width="420" alt="유닛 정보와 프리뷰"></td>
+</tr>
+</table>
 -->
 
 ## 프로젝트 개요
@@ -25,6 +36,8 @@
 | 개발 기간 | 1개월 |
 | 팀 구성 | 5명 (프로그래머 3명, UI 2명) |
 | 담당 | 조장, Units 시스템 프로그래밍 |
+| 규모 | C# 스크립트 115개, 약 11,600줄 / 유닛 32종 / 패시브 스킬 21종 |
+| 핵심 키워드 | `ScriptableObject` 데이터 설계, 오브젝트 풀링, 이벤트 기반 UI·연출, 인터페이스 계약, 애니메이션 이벤트 동기화, Editor 확장(CSV 임포터), `RenderTexture` 프리뷰 |
 | Unity | 6000.3.25f1 |
 | 렌더 파이프라인 | Universal Render Pipeline (URP) |
 
@@ -43,9 +56,92 @@
 | 편의 기능 | 등급 도박, 유닛 판매, 유닛 정보·프리뷰, 사거리·오라 표시 |
 | 제작 도구 | CSV 능력치·스킬 표를 `UnitData` 및 스킬 에셋에 반영하는 에디터 도구 |
 
+## 핵심 구현 사례
+
+유닛 시스템에서 상태가 어긋나기 쉬운 지점 다섯 가지를 문제 → 해결 → 결과 순서로 정리했습니다.
+
+### 1. 공격 애니메이션과 전투 판정 동기화
+
+| 구분 | 내용 |
+| --- | --- |
+| **문제** | 일부 유닛은 공격 판정과 투사체 생성이 모션 시작이 아니라 실제 발사 프레임에 일어나야 합니다. 애니메이션 이벤트에만 의존하면 이벤트가 누락될 때 공격이 멈추고, 공격이 취소된 직후 이전 클립에서 늦게 도착한 이벤트로 같은 공격이 중복 발사될 수 있습니다. |
+| **해결** | `Unit`이 공격을 '대기 중 공격'으로 보관하고, 애니메이션 이벤트가 오면 타겟과 사거리를 다시 확인한 뒤 스킬을 실행합니다. 이벤트가 오지 않으면 다음 공격 시각을 제한 시간으로 삼아 자동 발사하고, 타겟이 사라지거나 유닛이 이동해 공격이 취소되면 대기 상태를 정리한 뒤 `AttackCanceled` 이벤트를 보냅니다. 취소 직후 짧은 블렌딩 시간(`ATTACK_CANCEL_BLEND_TIME`) 동안 도착한 발사 이벤트는 무시합니다. |
+| **결과** | 즉시 공격과 모션 프레임에 맞춘 공격을 같은 전투 로직에서 처리합니다. 타겟 변경, 이동, 애니메이션 취소 상황에서도 공격이 멈추거나 중복 발사되지 않습니다. |
+
+코드: [`Unit`](Core/Unit.cs)의 `BeginPendingAttack`, `UpdatePendingAttack`, `ReleaseAttack`, `AbortPendingAttack`
+
+### 2. 풀링 중인 유닛과 비행 중 투사체
+
+| 구분 | 내용 |
+| --- | --- |
+| **문제** | 투사체가 날아가는 동안 발사한 유닛이 판매되거나 승급되면 해당 오브젝트는 풀에 반환되어 다른 유닛으로 재사용될 수 있습니다. 도착 시 원래 참조를 그대로 쓰면 재사용된 유닛에 과거 공격의 처치·적중 효과가 잘못 붙습니다. |
+| **해결** | `Unit`은 풀에서 대여될 때마다 `Lease` 번호를 올리고, 투사체는 발사 시점의 번호를 저장합니다. 적중 시 번호가 일치하면 원래 유닛에 처치·적중 효과를 알리고, 달라졌다면 이전 발사자의 스킬을 호출하지 않고 투사체 피해만 적용합니다. 타겟이 비행 중 사망하면 마지막 위치까지 진행한 뒤 적중 처리를 건너뜁니다. |
+| **결과** | 이미 발사된 공격은 유지하면서, 재사용된 유닛에 과거 처치 효과가 잘못 붙지 않습니다. |
+
+**[`Projectile.Arrive`](Projectile/Projectile.cs#L160-L174) (발췌): 발사자가 재사용됐는지 확인**
+
+```csharp
+// 쏜 유닛이 그 사이 풀로 돌아갔거나 다른 유닛으로 재사용됐으면 (판매, 승급) 대미지만 주고 처치 효과는 없다.
+if (_owner.Lease == _ownerLease) _owner.ApplyHit(_target, _damage, _damageKind);
+else MonsterSkillDamage.Apply(_target, _damage, _damageKind);
+```
+
+### 3. 배치가 바뀔 때만 다시 계산하는 오라
+
+| 구분 | 내용 |
+| --- | --- |
+| **문제** | 인접 유닛에게 주는 오라는 유닛이 이동·판매·승급될 때마다 달라져야 합니다. 한 번만 걸면 이전 보정이 남고, 매 프레임 갱신하면 불필요한 계산이 생깁니다. |
+| **해결** | `GridField`는 소환·이동·판매·승급 때마다 `SlotChanged` 이벤트를 보냅니다. `UnitAuraSystem`은 이 이벤트를 받아 모든 유닛의 오라 보정을 지우고, 현재 배치 기준으로 각 스킬의 `ApplyAura`를 처음부터 다시 호출합니다. |
+| **결과** | 유닛이 이동하거나 판매·승급되어도 이전 오라가 남지 않고, 계산은 배치가 바뀔 때만 일어납니다. 오라 범위는 `Visual/`의 표시 컴포넌트가 바닥 칸으로 보여줍니다. |
+
+코드: [`UnitAuraSystem`](Grid/UnitAuraSystem.cs), [`SlotAuraFloorPresenter`](Visual/SlotAuraFloorPresenter.cs)
+
+### 4. 표에서 에셋을 갱신하는 안전한 흐름
+
+| 구분 | 내용 |
+| --- | --- |
+| **문제** | 유닛 32종과 스킬 21종의 수치를 Inspector에서 하나씩 입력하면 실수하기 쉽고, 밸런스를 바꿀 때마다 반복해야 합니다. 에셋을 새로 만들면 유닛과의 연결이 끊어질 수도 있습니다. |
+| **해결** | 스프레드시트에서 내보낸 CSV를 읽는 에디터 임포터를 만들었습니다. 능력치 임포터는 표의 `unitId`로 `UnitData`를 찾아 갱신하고, 중복 ID·없는 ID·잘못된 숫자를 결과 보고서에 남깁니다. 스킬 임포터는 `skillClass`에 대응하는 에셋을 만들거나 갱신하고, 유닛별 스킬 순서와 추가 슬롯을 표 기준으로 배정합니다. 구현되지 않은 스킬 행은 건너뛰고, 일부만 배정된 유닛은 별도로 보고합니다. 두 임포터 모두 기본값이 '미리보기'이며, 실제 적용 전에는 커밋 여부를 묻는 확인 창을 거칩니다. |
+| **결과** | 밸런스 수정이 '표 수정 → 미리보기 → 적용'으로 끝납니다. 이미 있는 에셋은 GUID가 유지되어 유닛 연결이 끊어지지 않고, 표에 없는 유닛이나 빈 칸은 그대로 둡니다. |
+
+**[`SkillTableImporter.CreateOrUpdate`](Tools/Editor/SkillTableImporter.cs#L270-L292) (발췌): 기존 에셋을 갱신하고, 종류가 다르면 중단**
+
+```csharp
+// 스킬 에셋을 만들거나(없으면) 값만 갱신한다(있으면). 이미 있는 에셋은 GUID가 그대로라 유닛 연결이 유지된다.
+    UnitSkill skill = AssetDatabase.LoadAssetAtPath<UnitSkill>(path);
+    isNew = skill == null;
+
+    if (isNew == false && skill.GetType() != binding.AssetType)
+        throw new InvalidOperationException($"이미 있는 에셋의 종류({skill.GetType().Name})가 표({binding.AssetType.Name})와 다릅니다.");
+
+    if (_dryRun) return skill;
+```
+
+### 5. 3D 유닛 프리뷰 분리
+
+| 구분 | 내용 |
+| --- | --- |
+| **문제** | 유닛 정보창에 3D 모델 프리뷰를 보여주려면 전장의 유닛을 활용하면서도 전장 카메라와 프리뷰가 서로 섞이지 않아야 합니다. 유닛마다 체형이 달라 같은 카메라 설정으로는 카드 안에 맞지 않습니다. |
+| **해결** | 전용 카메라와 `RenderTexture`를 사용합니다. 선택한 유닛의 렌더러만 `UnitPreview` 레이어로 옮겨 전장 카메라와 분리하고, 유닛별 프레이밍 값으로 체형이 다른 모델도 카드 안에 맞춥니다. 프레이밍 값은 에디터 도구가 프리팹에서 계산해 데이터에 기록합니다. 프리뷰를 닫거나 유닛이 풀로 돌아가면 원래 레이어를 복원합니다. |
+| **결과** | 정보창에서 선택한 유닛을 전용 카메라로 보여주고, 프리뷰를 닫으면 레이어가 원래대로 돌아갑니다. |
+
+코드: [`UnitPreviewController`](UI/UnitPreviewController.cs), [`UnitPreviewFramingBaker`](Tools/Editor/UnitPreviewFramingBaker.cs)
+
+## 먼저 볼 코드
+
+코드를 빠르게 훑어보실 때는 아래 순서를 권합니다.
+
+| 순서 | 파일 | 볼 곳 |
+| --- | --- | --- |
+| 1 | [`Core/Unit.cs`](Core/Unit.cs) | 타겟 탐색, 공격 주기, 대기 중 공격(`BeginPendingAttack`, `UpdatePendingAttack`), `Lease` |
+| 2 | [`Grid/GridField.cs`](Grid/GridField.cs) | 칸 생성과 좌표 변환, [`TryMove`](Grid/GridField.cs#L263), `ConsolidateStacks` |
+| 3 | [`Skills/UnitSkill.cs`](Skills/UnitSkill.cs) | 스킬 생명주기 훅, 구현 예시 [`ChainLightningSkill`](Skills/ChainLightningSkill.cs) |
+| 4 | [`Projectile/Projectile.cs`](Projectile/Projectile.cs) | 궤도 이동, [`Arrive`](Projectile/Projectile.cs#L160-L174) |
+| 5 | [`Tools/Editor/SkillTableImporter.cs`](Tools/Editor/SkillTableImporter.cs) | CSV → 스킬 에셋 생성·갱신, 미리보기 모드 |
+
 ## 유닛 데이터 구성
 
-유닛 목록과 스킬 배정표에는 총 32종을 정리했습니다.
+유닛 목록과 스킬 배정표에는 총 32종을 정리했습니다. 게임에 반영한 수치는 [`UnitStatTable.csv`](Tools/Editor/UnitStatTable.csv), 스킬 배정은 [`SkillTable.csv`](Tools/Editor/SkillTable.csv)에 있습니다.
 
 | 등급 | 수량 | ID 범위 |
 | --- | ---: | --- |
@@ -105,35 +201,33 @@ flowchart LR
 
 기본 필드는 3행 5열이며, 슬롯은 같은 종류의 유닛만 최대 3마리까지 받습니다. 기본 필드 유닛 수 제한은 20마리이고 유물 효과로 늘릴 수 있습니다.
 
-`GridField`와 `Slot`은 행·열 인덱스와 3D 월드 좌표를 함께 관리합니다. 한 슬롯의 여러 유닛은 슬롯 중심 주위에 원형으로 배치하고, 공격 사거리는 모델의 실제 위치가 아니라 슬롯 중심에서 XZ 평면 거리로 계산합니다. 높낮이에 따라 사거리 판정이 달라지지 않도록 3D 전장 규칙을 명시했습니다.
+`GridField`와 `Slot`은 행·열 인덱스와 3D 월드 좌표를 함께 관리합니다. 한 슬롯의 여러 유닛은 슬롯 중심 주위에 원형으로 배치하고, 공격 사거리는 모델의 실제 위치가 아니라 슬롯 중심에서 XZ 평면 거리로 계산합니다. 같은 칸의 유닛이 일관된 공격 범위를 쓰고, 높낮이에 따라 사거리 판정이 달라지지 않도록 3D 전장 규칙을 명시했습니다.
 
 `GridDragInput`은 Unity `EventSystem` 포인터 이벤트로 탭과 드래그를 처리합니다. UI에서 시작된 입력은 그리드 조작으로 전달하지 않으며, 드래그 시작·이동·종료를 이벤트로 보내 가이드나 슬롯 선택 UI가 별도로 반응하도록 했습니다.
 
-드래그로 슬롯 전체를 옮길 때 대상 칸의 상태에 따라 동작을 나눕니다. 빈 칸이면 스택 전체를 이동하고, 같은 종류면 남은 자리만큼 합치며, 다른 종류면 두 스택을 교환합니다. 같은 종류의 대상 칸이 가득 찼다면 이동을 거부합니다.
+드래그로 슬롯 전체를 옮길 때는 대상 칸의 상태에 따라 이동, 합치기, 교환으로 나뉘며 한 메서드에서 처리합니다.
 
-슬롯 이동 규칙은 한 메서드에서 빈 칸 이동, 같은 종류 합치기, 다른 종류 교환으로 처리합니다.
+**[`GridField.TryMove`](Grid/GridField.cs#L263) (발췌): 빈 칸 이동 · 합치기 · 교환**
 
 ```csharp
 if (to.IsEmpty)
 {
-    to.AddRange(from.TakeAll());
+    to.AddRange(from.TakeAll());                // 빈 칸: 스택 전체 이동
 }
 else if (to.Type == from.Type)
 {
-    if (to.IsFull) return false;
-    while (to.IsFull == false && from.IsEmpty == false)
+    if (to.IsFull) return false;                // 같은 종류 + 가득 참: 원위치
+    while (to.IsFull == false && from.IsEmpty == false)         // 같은 종류: 자리만큼 합치기
         to.Add(from.TakeLast());
 }
 else
 {
-    List<Unit> fromUnits = from.TakeAll();
+    List<Unit> fromUnits = from.TakeAll();      // 다른 종류: 두 칸 교환
     List<Unit> toUnits = to.TakeAll();
     from.AddRange(toUnits);
     to.AddRange(fromUnits);
 }
 ```
-
-코드: [`GridField.TryMove`](https://github.com/gesua/DefenseRush_UnitScripts/blob/main/Grid/GridField.cs#L263)
 
 <!-- TODO: 빈 칸 이동, 같은 종류 합치기, 다른 종류 교환 중 대표 장면 GIF 추가
 ![그리드 드래그와 스택 정리](docs/images/unit-grid-drag.gif)
@@ -145,7 +239,7 @@ else
 
 ### 판매
 
-슬롯의 유닛을 한 마리씩 판매하고 등급별 재화를 지급합니다. 재화를 받지 못하면 유닛을 제거하지 않습니다. 판매 후에는 같은 종류가 여러 슬롯에 나뉘어 있을 때 남은 유닛을 가능한 슬롯에 다시 모읍니다.
+슬롯의 유닛을 한 마리씩 판매하고 등급별 재화를 지급합니다. 재화를 받지 못하면 유닛을 제거하지 않습니다. 판매 후에는 같은 종류가 여러 슬롯에 나뉘어 있을 때 `ConsolidateStacks`가 남은 유닛을 가능한 슬롯에 다시 모읍니다. 예를 들어 3마리 칸과 2마리 칸이 있을 때 3마리 칸에서 한 마리를 팔면 2 + 2가 아니라 3 + 1로 정리합니다.
 
 <!-- TODO: 3마리 승급 또는 판매 후 스택 정리를 보여주는 GIF 추가
 ![유닛 승급과 판매](docs/images/unit-promote-sell.gif)
@@ -153,14 +247,12 @@ else
 
 ## 자동 전투와 투사체
 
-각 `Unit`은 타겟을 다시 찾고, 공격 사거리 안의 몬스터를 자동으로 공격합니다. 그리드 슬롯에 배치된 유닛은 각자 모델 위치가 달라도 슬롯 중심을 기준으로 사거리를 계산해 같은 칸의 유닛이 일관된 공격 범위를 사용합니다.
+각 `Unit`은 타겟을 다시 찾고, 슬롯 중심 기준 사거리 안의 몬스터를 자동으로 공격합니다.
 
 - 타겟 탐색, 이동, 적 방향 회전을 유닛 동작 안에서 관리합니다.
 - 투사체가 없는 공격은 즉시 적용하고, 투사체가 설정된 유닛은 발사체가 적에게 도달한 시점에 적중 처리를 합니다.
-- `UnitData`에서 공격 효과를 공격 시작 시점 또는 애니메이션 발사 이벤트 시점에 실행하도록 선택할 수 있습니다.
+- `UnitData`에서 공격 효과를 공격 시작 시점 또는 애니메이션 발사 이벤트 시점에 실행하도록 선택할 수 있습니다. 이벤트 누락과 취소 처리는 핵심 구현 사례 1에 정리했습니다.
 - 공격 시작(`Attacked`), 발사(`Released`), 취소(`AttackCanceled`), 적중(`Hit`), 처치(`Killed`) 이벤트를 분리해 애니메이션과 전투 이펙트를 연결합니다.
-- 발사 애니메이션 이벤트가 누락되어 공격이 멈추지 않도록 다음 공격 시각을 발사 제한 시간으로 사용합니다. 타겟이 사라졌거나 이동으로 공격이 취소되면 대기 상태를 정리하고 공격 취소 이벤트를 보냅니다.
-- 취소 직후 이전 애니메이션 클립에서 늦게 도착한 발사 이벤트는 짧은 블렌딩 시간 동안 무시해 한 공격이 중복 발사되는 상황을 막습니다.
 
 투사체는 직선 또는 포물선 궤도로 이동하며, 움직이는 타겟은 비행 중에도 조준점을 갱신합니다. 타겟이 비행 중 사망하면 마지막 위치까지 진행한 뒤 적중 처리를 건너뜁니다.
 
@@ -170,9 +262,11 @@ else
 
 ## 패시브 스킬 구조
 
-`UnitSkill`은 스킬 공통 데이터를 담는 추상 `ScriptableObject`입니다. 스킬은 유닛별 인스턴스 상태를 저장하지 않고, `UnitData`의 스킬 목록에 에셋으로 연결해 재사용합니다.
+`UnitSkill`은 스킬 공통 데이터를 담는 추상 `ScriptableObject`이고, 구현은 이를 상속한 21종입니다. 스킬은 유닛별 인스턴스 상태를 저장하지 않고, `UnitData`의 스킬 목록에 에셋으로 연결해 재사용합니다.
 
 스킬 종류별 클래스는 필요한 시점만 재정의합니다. 예를 들어 공격형 스킬은 `OnAttack`, 경제 스킬은 `OnSpawned` 또는 `OnRoundStart`, 오라 스킬은 `ApplyAura`를 구현합니다.
+
+**[`UnitSkill`](Skills/UnitSkill.cs#L61-L82) 생명주기 (발췌)**
 
 ```csharp
 public virtual void OnSpawned(Unit unit) { }
@@ -182,7 +276,7 @@ public virtual void OnRoundStart(Unit unit, int round) { }
 public virtual void ApplyAura(Unit unit) { }
 ```
 
-코드: [`UnitSkill` 생명주기](https://github.com/gesua/DefenseRush_UnitScripts/blob/main/Skills/UnitSkill.cs#L61-L82)
+처치한 자리가 필요한 스킬(시체 폭발)은 사망 위치를 함께 받는 `OnKill` 오버로드를 재정의합니다. 기본 구현이 위치 없는 `OnKill`을 호출하므로 기존 처치 스킬(광분 등)은 그대로 동작합니다.
 
 | 실행 시점 | 용도 예시 |
 | --- | --- |
@@ -208,7 +302,7 @@ public virtual void ApplyAura(Unit unit) { }
 
 ### 오라 갱신
 
-`UnitAuraSystem`은 슬롯 구성 변경 이벤트를 받아 기존 오라 보정을 지우고 현재 배치 기준으로 다시 적용합니다. 유닛이 이동하거나 판매·승급되어도 이전 오라가 남지 않으며, 오라 갱신을 매 프레임 반복하지 않습니다. 오라 범위는 별도 표시 컴포넌트에서 바닥 칸으로 보여줍니다.
+`UnitAuraSystem`은 슬롯 구성 변경 이벤트를 받아 오라 보정을 다시 계산합니다. 계산 방식은 핵심 구현 사례 3에 정리했습니다. 오라 범위는 별도 표시 컴포넌트에서 바닥 칸으로 보여줍니다.
 
 ## 강화와 소환 확률 성장
 
@@ -229,45 +323,12 @@ public virtual void ApplyAura(Unit unit) { }
 ![유닛 강화와 등급 도박](docs/images/unit-upgrade-gamble.png)
 -->
 
-## 대표 구현 사례
-
-### 공격 애니메이션과 전투 판정 동기화
-
-일부 유닛은 공격 판정과 투사체 생성이 공격 모션의 시작 프레임이 아니라 실제 발사 프레임에 일어나야 합니다. `Unit`은 이 공격을 대기 상태로 보관하고 애니메이션 이벤트가 오면 타겟과 사거리를 다시 확인한 다음 스킬을 실행합니다. 이벤트가 누락되면 제한 시간에 자동 발사하고, 유닛이 이동하거나 공격 대상이 없어지면 취소합니다.
-
-이 구조로 즉시 공격과 모션 프레임에 맞춘 공격을 같은 전투 로직에서 처리하고, 타겟 변경과 애니메이션 취소 상황도 분리해 다룹니다.
-
-### 풀링 중인 유닛과 비행 중 투사체
-
-투사체가 날아가는 동안 발사한 유닛이 판매되거나 승급되면 해당 오브젝트는 풀에 반환되어 다른 유닛으로 재사용될 수 있습니다. `Unit`은 풀에서 대여될 때마다 `Lease` 번호를 올리고, 투사체는 발사 시점의 번호를 저장합니다.
-
-적중 시 번호가 일치하면 원래 유닛에 처치·적중 효과를 알립니다. 번호가 달라졌다면 이전 발사자의 스킬을 호출하지 않고 투사체 피해만 적용합니다. 이렇게 해서 이미 발사된 공격은 유지하면서 재사용된 유닛에 과거 처치 효과가 잘못 붙지 않게 했습니다.
-
-```csharp
-if (_owner.Lease == _ownerLease)
-    _owner.ApplyHit(_target, _damage, _damageKind);
-else
-    MonsterSkillDamage.Apply(_target, _damage, _damageKind);
-```
-
-코드: [`Projectile.Arrive`](https://github.com/gesua/DefenseRush_UnitScripts/blob/main/Projectile/Projectile.cs#L160-L173)
-
-### 표에서 에셋을 갱신하는 안전한 흐름
-
-능력치 임포터는 표의 `unitId`로 에셋을 찾고, 중복 ID·없는 ID·잘못된 숫자를 결과 보고서에 남깁니다. 미리보기 모드에서는 바뀔 값만 보여주고 에셋을 저장하지 않습니다. 실제 적용에서도 표에 없는 유닛이나 빈 칸은 그대로 둡니다.
-
-스킬 임포터는 `skillClass`에 대응하는 에셋 유형을 찾아 새 에셋을 만들거나 기존 값을 갱신하고, 유닛별 스킬 순서와 추가 슬롯을 표 기준으로 설정합니다. 아직 구현되지 않은 스킬 행은 건너뛰고, 일부만 배정된 유닛을 별도로 보고합니다.
-
-### 3D 유닛 프리뷰 분리
-
-유닛 정보 UI의 프리뷰에는 전용 카메라와 `RenderTexture`를 사용합니다. 선택한 유닛의 렌더러만 `UnitPreview` 레이어로 옮겨 전장 카메라와 분리하고, 유닛별 프레이밍 값을 사용해 체형이 다른 모델도 카드 안에 맞춰 보여줍니다. 프리뷰를 닫거나 유닛이 풀로 돌아가면 원래 레이어를 복원합니다.
-
 ## 유닛 UI와 3D 프리뷰
 
 - 유닛 정보 패널에서 등급, 능력치, 강화 레벨, 스킬과 현재 버프를 표시합니다.
 - 선택 유닛의 공격 사거리를 바닥에 원으로 표시하고, 인접 오라의 적용 슬롯을 시각화합니다.
 - 승급 가능 상태, 등급 색상, 소환 확률, 유닛 수 제한, 소환·도박 결과 등을 UI 이벤트로 갱신합니다.
-- 선택한 3D 모델을 정보 패널에서 둘러볼 수 있는 프리뷰를 제공합니다. 프리뷰 카메라와 레이어 분리 방식은 아래 구현 사례에 설명했습니다.
+- 선택한 3D 모델을 정보 패널에서 둘러볼 수 있는 프리뷰를 제공합니다. 카메라와 레이어 분리 방식은 핵심 구현 사례 5에 정리했습니다.
 - 공격 애니메이션, 손 위치 IK, 무기 표시, 등급 링과 스킬 발동 이펙트도 유닛 이벤트에 연결합니다.
 
 ## 에디터 제작 도구
@@ -280,10 +341,9 @@ else
 | Skill Table Importer | `SkillTable.csv` | 스킬 유형에 맞는 에셋을 생성·갱신하고 유닛별 슬롯에 배정 |
 | Skill Icon Assigner | 스킬 에셋과 아이콘 자료 | 이름 기준으로 스킬 아이콘 연결 |
 | Unit Preview Framing Baker | 유닛 프리팹 | 프리뷰 카메라의 중심과 크기를 계산해 데이터에 기록 |
+| Summon Manager Inspector | 선택한 `UnitData`와 마릿수 | 플레이 중 원하는 유닛을 목록에서 골라 필드에 소환하는 개발용 치트 |
 
-임포터는 먼저 미리보기로 변경 내역과 누락된 ID를 확인한 뒤 실제 적용할 수 있습니다. 스킬 임포터는 구현이 아직 연결되지 않은 행을 건너뛰도록 구성했습니다.
-
-코드: [`UnitStatTableImporter`](https://github.com/gesua/DefenseRush_UnitScripts/blob/main/Tools/Editor/UnitStatTableImporter.cs), [`SkillTableImporter`](https://github.com/gesua/DefenseRush_UnitScripts/blob/main/Tools/Editor/SkillTableImporter.cs#L270-L292)
+코드: [`UnitStatTableImporter`](Tools/Editor/UnitStatTableImporter.cs), [`SkillTableImporter`](Tools/Editor/SkillTableImporter.cs#L270-L292)
 
 <!-- TODO: CSV 미리보기 결과나 Unity Inspector에 반영된 UnitData 캡처 추가
 ![유닛 데이터 임포터](docs/images/unit-data-importer.png)
@@ -311,16 +371,16 @@ flowchart TD
 
 | 클래스 | 책임 |
 | --- | --- |
-| `Unit` | 필드 유닛의 이동, 타겟 탐색, 공격 주기, 스킬 호출, 적중·처치 이벤트 |
-| `UnitData` / `UnitDatabase` | 유닛별 데이터와 등급별 검색·무작위 선택 |
-| `GridField` / `Slot` | 3D 월드 그리드, 스택 이동·합치기·교환, 승급·판매 후 재배치 |
-| `SummonManager` / `PromotionManager` / `SellManager` | 기본 소환, 승급, 판매 규칙 |
-| `GambleManager` | 확률 도박, 등급별 비용 증가, 실패 보상과 결과 이벤트 |
-| `UnitSkill` 및 파생 클래스 | 공통 스킬 생명주기와 개별 패시브 효과 |
-| `UnitPool` / `ProjectilePool` | 유닛·투사체 인스턴스 재사용과 수명 정리 |
-| `UnitStatProvider` | 기본 능력치, 로비·인게임 강화, 유물 보정 계산 |
-| `UnitPreviewController` | 전장과 분리된 유닛 프리뷰 카메라 및 RenderTexture |
-| `UnitStatTableImporter` / `SkillTableImporter` | CSV 데이터 검증 및 Unity 에셋 반영 |
+| [`Unit`](Core/Unit.cs) | 필드 유닛의 이동, 타겟 탐색, 공격 주기, 스킬 호출, 적중·처치 이벤트 |
+| [`UnitData`](Core/UnitData.cs) / [`UnitDatabase`](Summon/UnitDatabase.cs) | 유닛별 데이터와 등급별 검색·무작위 선택 |
+| [`GridField`](Grid/GridField.cs) / [`Slot`](Grid/Slot.cs) | 3D 월드 그리드, 스택 이동·합치기·교환, 승급·판매 후 재배치 |
+| [`SummonManager`](Summon/SummonManager.cs) / [`PromotionManager`](Summon/PromotionManager.cs) / [`SellManager`](Summon/SellManager.cs) | 기본 소환, 승급, 판매 규칙 |
+| [`GambleManager`](Gamble/GambleManager.cs) | 확률 도박, 등급별 비용 증가, 실패 보상과 결과 이벤트 |
+| [`UnitSkill`](Skills/UnitSkill.cs) 및 파생 클래스 | 공통 스킬 생명주기와 개별 패시브 효과 |
+| [`UnitPool`](Core/UnitPool.cs) / [`ProjectilePool`](Projectile/ProjectilePool.cs) | 유닛·투사체 인스턴스 재사용과 수명 정리 |
+| [`UnitStatProvider`](Enhance/UnitStatProvider.cs) | 기본 능력치, 로비·인게임 강화, 유물 보정 계산 |
+| [`UnitPreviewController`](UI/UnitPreviewController.cs) | 전장과 분리된 유닛 프리뷰 카메라 및 RenderTexture |
+| [`UnitStatTableImporter`](Tools/Editor/UnitStatTableImporter.cs) / [`SkillTableImporter`](Tools/Editor/SkillTableImporter.cs) | CSV 데이터 검증 및 Unity 에셋 반영 |
 
 ### 주요 디렉터리
 
@@ -335,14 +395,20 @@ flowchart TD
 | `Enhance/` | 로비·인게임 스탯 강화와 소환 확률 |
 | `Contracts/`, `Integration/` | 시스템 경계 인터페이스와 게임 데이터 어댑터 |
 | `UI/`, `Visual/` | 유닛 정보, 상호작용, 전투·등급·범위 연출 |
-| `Tools/Editor/` | 표 임포터와 아이콘·프리뷰 제작 도구 |
+| `Tools/Editor/` | 표 임포터(CSV 포함)와 아이콘·프리뷰 제작 도구 |
 
 ## 설계 원칙
 
-- **시스템 경계:** 적 목록, 지갑, 전투 재화, 스탯 제공자는 `IMonsterRegistry`, `IWallet`, `ICurrencyReceiver`, `IUnitStatProvider` 같은 계약으로 연결합니다.
+- **시스템 경계:** 적 목록, 지갑, 전투 재화, 스탯 제공자는 `IMonsterRegistry`, `IWallet`, `ICurrencyReceiver`, `IUnitStatProvider` 같은 계약으로 연결합니다. 스킬이 필요로 하는 몬스터 기능은 `ISlowable`, `IStunnable`, `IDotReceiver`, `IArmorBreakable`, `IBossTarget`처럼 작은 인터페이스로 나눴습니다.
 - **데이터와 로직 분리:** 유닛 설정과 재사용 가능한 스킬 효과는 `ScriptableObject`로 관리하고, 런타임 전투 상태는 `Unit`이 처리합니다.
 - **이벤트 기반 표시 갱신:** 슬롯·강화·공격 이벤트를 UI와 이펙트에 전달해 전투 규칙과 표시 로직을 나눕니다.
 - **상태 수명 관리:** 풀링, 비행 중 투사체, 오라 재계산처럼 상태가 소환·이동·판매·승급 이후에도 남을 수 있는 경계를 별도로 처리합니다.
+
+## 협업 방식
+
+- **파트 경계는 인터페이스로:** 몬스터·재화·유물 쪽은 `Contracts/`의 인터페이스로 접근하고, 팀 공용 게임 데이터와 닿는 부분은 `Integration/`의 어댑터로 모았습니다. 몬스터 담당과 협의해 스킬에 필요한 기능(감속, 기절, 지속 피해, 방어력 감소, 보스 판별, 체력)을 인터페이스로 정의했고, 몬스터 구현이 완성되기 전에는 테스트용 더미 몬스터로 유닛 전투를 먼저 검증했습니다.
+- **씬 충돌 줄이기:** 같은 씬을 함께 작업하는 팀원과는 씬을 복제해 각자 씬에서 프리팹 단위로 작업했습니다.
+- **팀장 역할:** Git 병합과 충돌 정리를 맡았습니다.
 
 ## 기술 스택
 
@@ -352,7 +418,10 @@ flowchart TD
 - Unity UI (UGUI), TextMeshPro
 - ScriptableObject 기반 게임 데이터
 - Unity `ObjectPool<T>`
+- Unity Editor 확장 (CSV 임포터, 베이커, Inspector 도구)
+
+<!-- TODO: 회고 — 구조에서 아쉬웠던 점이나 다시 만든다면 바꿀 점을 3~4줄로 적어 '공개 범위' 위에 넣어 보세요. -->
 
 ## 공개 범위
 
-이 저장소는 제가 담당한 Units 시스템의 코드 리뷰를 위한 포트폴리오 샘플입니다. 유료 에셋과 팀원의 MainScene·Enemies 코드는 포함하지 않았습니다. 씬, 프리팹, `ScriptableObject` 에셋 등 실행 리소스가 없어 단독 실행 프로젝트는 아닙니다.
+이 저장소는 제가 담당한 Units 시스템의 코드 리뷰를 위한 포트폴리오 샘플입니다. 유료 에셋과 팀원의 MainScene·Enemies 코드는 포함하지 않았습니다. 코드와 데이터는 C# 스크립트(`.meta` 포함)와 밸런스 CSV 2개뿐입니다. 씬, 프리팹, `ScriptableObject` 에셋 등 실행 리소스가 없어 단독 실행 프로젝트는 아닙니다.
