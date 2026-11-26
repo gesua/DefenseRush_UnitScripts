@@ -6,7 +6,7 @@
 
 이 저장소에는 팀 프로젝트 전체가 아니라 제가 맡아 개발한 Units 코드만 따로 정리했습니다.<br> 유료 에셋과 팀원의 MainScene·Enemies 코드는 포함하지 않았습니다. 자세한 범위는 [공개 범위](#공개-범위)에 적었습니다.
 
-[GitHub 코드 저장소](https://github.com/gesua/DefenseRush_UnitScripts)
+[📦 빌드 다운로드](https://drive.google.com/file/d/1FcifTRjN9o3C1SgS-OdaaTdD3rvKAray/view?usp=drive_link) | [GitHub 코드 저장소](https://github.com/gesua/DefenseRush_UnitScripts)
 
 <!-- 시연 영상이나 빌드 링크가 생기면 위 링크 줄을 아래 형태로 바꾸세요.
 [🎮 시연 영상](영상 링크) | [📦 빌드 다운로드](https://drive.google.com/file/d/1FcifTRjN9o3C1SgS-OdaaTdD3rvKAray/view?usp=drive_link) | [GitHub 코드 저장소](https://github.com/gesua/DefenseRush_UnitScripts)
@@ -15,14 +15,26 @@
 ## 플레이 영상 및 화면
 
 <table>
-<tr>
-<td><strong>유닛 소환과 배치</strong><br><img src="docs~/images/unit-summon.gif" width="420" alt="유닛 소환과 배치"></td>
-<td><strong>유닛 스킬과 강화</strong><br><img src="docs~/images/unit-combat.gif" width="420" alt="유닛 전투와 스킬"></td>
-</tr>
-<tr>
-<td><strong>유닛 승급과 프리뷰</strong><br><img src="docs~/images/unit-preview.gif" width="420" alt="유닛 정보와 프리뷰"></td>
-<td><strong>보스 전투</strong><br><img src="docs~/images/boss.gif" width="420" alt="유닛 정보와 프리뷰"></td>
-</tr>
+  <tr>
+    <td width="50%">
+      <strong>유닛 소환과 배치</strong><br>
+      <img src="docs~/images/unit-summon.gif" width="100%" alt="유닛 소환과 배치">
+    </td>
+    <td width="50%">
+      <strong>유닛 스킬과 강화</strong><br>
+      <img src="docs~/images/unit-combat.gif" width="100%" alt="유닛 전투와 스킬">
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <strong>유닛 승급과 프리뷰</strong><br>
+      <img src="docs~/images/unit-preview.gif" width="100%" alt="유닛 정보와 프리뷰">
+    </td>
+    <td width="50%">
+      <strong>보스 전투</strong><br>
+      <img src="docs~/images/boss.gif" width="100%" alt="보스 전투">
+    </td>
+  </tr>
 </table>
 
 ## 프로젝트 개요
